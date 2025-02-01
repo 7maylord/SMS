@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 import abi from "./abi.json";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import "./App.css";  
+import "./App.css";
 
 const CONTRACT_ADDRESS = "0x72adE6a1780220074Fd19870210706AbCb7589BF";
 
@@ -12,13 +12,15 @@ function App() {
   const [studentId, setStudentId] = useState("");
   const [walletAddress, setWalletAddress] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
-  
-  // Function to shorten the wallet address (e.g., 0x1234...5678)
+  const [students, setStudents] = useState([]);
+  const [studentDetails, setStudentDetails] = useState(null);
+  const [showStudentModal, setShowStudentModal] = useState(false);
+  const [showAllStudentsModal, setShowAllStudentsModal] = useState(false);
+
   function shortenAddress(address) {
     return address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "";
   }
 
-  // Check if wallet is already connected
   useEffect(() => {
     async function checkWalletConnection() {
       if (typeof window.ethereum !== "undefined") {
@@ -36,7 +38,6 @@ function App() {
     checkWalletConnection();
   }, []);
 
-  // Request accounts function
   async function requestAccounts() {
     if (typeof window.ethereum !== "undefined") {
       try {
@@ -52,7 +53,6 @@ function App() {
     }
   }
 
-  // Disconnect Wallet function
   function disconnectWallet() {
     setWalletAddress(null);
     setIsConnected(false);
@@ -96,6 +96,28 @@ function App() {
     }
   }
 
+  async function getStudentById() {
+    try {
+      const contract = await getContract();
+      const name = await contract.getStudentById(studentId);
+      setStudentDetails({ id: studentId, name });
+      setShowStudentModal(true);
+    } catch (err) {
+      toast.error(`Error fetching student: ${err.message}`);
+    }
+  }
+
+  async function getAllStudents() {
+    try {
+      const contract = await getContract();
+      const studentList = await contract.getAllStudents();
+      setStudents(studentList);
+      setShowAllStudentsModal(true);
+    } catch (err) {
+      toast.error(`Error fetching students: ${err.message}`);
+    }
+  }
+
   return (
     <div className="dapp-container">
       <h1>School Management DApp</h1>
@@ -107,22 +129,43 @@ function App() {
       ) : (
         <button onClick={requestAccounts}>Connect Wallet</button>
       )}
+      
       <div className="form-section">
-        <input
-          type="text"
-          placeholder="Student ID"
-          value={studentId}
-          onChange={(e) => setStudentId(e.target.value)}
-        />
-        <input
-          type="text"
-          placeholder="Student Name"
-          value={studentName}
-          onChange={(e) => setStudentName(e.target.value)}
-        />
+        <input type="text" placeholder="Student ID" value={studentId} onChange={(e) => setStudentId(e.target.value)} />
+        <input type="text" placeholder="Student Name" value={studentName} onChange={(e) => setStudentName(e.target.value)} />
         <button onClick={registerStudent}>Register Student</button>
         <button onClick={removeStudent}>Remove Student</button>
+        <button onClick={getStudentById}>Get Student by ID</button>
+        <button onClick={getAllStudents}>Get All Students</button>
       </div>
+      
+      {showStudentModal && (
+        <div className="modal">
+          <div className="modal-content">
+            <h2>Student Details</h2>
+            <p><strong>ID:</strong> {studentDetails?.id}</p>
+            <p><strong>Name:</strong> {studentDetails?.name}</p>
+            <button onClick={() => setShowStudentModal(false)}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {showAllStudentsModal && (
+        <div className="modal">
+          <div className="modal-content">
+            <h2>All Students</h2>
+            {students.length > 0 ? (
+              students.map((student, index) => (
+                <p key={index}><strong>ID:</strong> {student.id} | <strong>Name:</strong> {student.name}</p>
+              ))
+            ) : (
+              <p>No students found.</p>
+            )}
+            <button onClick={() => setShowAllStudentsModal(false)}>Close</button>
+          </div>
+        </div>
+      )}
+
       <ToastContainer />
     </div>
   );
