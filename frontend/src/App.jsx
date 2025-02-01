@@ -90,6 +90,7 @@ function App() {
       const tx = await contract.removeStudent(studentId);
       await tx.wait();
       setStudentId("");
+      setStudentName("");
       toast.success("Student removed successfully!");
     } catch (err) {
       toast.error(`Removal failed: ${err.message}`);
@@ -102,6 +103,8 @@ function App() {
       const name = await contract.getStudentById(studentId);
       setStudentDetails({ id: studentId, name });
       setShowStudentModal(true);
+      setStudentId("");
+      setStudentName("");
     } catch (err) {
       toast.error(`Error fetching student: ${err.message}`);
     }
